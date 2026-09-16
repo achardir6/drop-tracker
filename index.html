@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#080a0f">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Drop Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#080a0f;--panel:#11141b;--panel2:#171b24;--text:#f4f7fb;--muted:#9099aa;--line:#262c38}
+*{box-sizing:border-box}html,body{margin:0;background:radial-gradient(circle at top,#161b25 0,#080a0f 44%,#06070b 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100%}
+body{padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)}
+button,input{font:inherit}.app{max-width:900px;margin:0 auto;padding:18px 0 32px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.brand{display:flex;align-items:center;gap:11px}.logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#fff,#a9b6ff 40%,#7158ff);box-shadow:0 8px 25px #5f55ff33}.brand h1{font-size:20px;margin:0}.brand p{font-size:12px;color:var(--muted);margin:2px 0 0}.top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.smallbtn{border:1px solid var(--line);background:#0e1117;color:#dce2ec;border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}.hero,.history{background:linear-gradient(180deg,#141821dd,#0e1117dd);border:1px solid #242a36;border-radius:22px;box-shadow:0 18px 55px #0006}.hero{padding:16px}.buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.drop{position:relative;border:0;border-radius:17px;padding:19px 10px 16px;color:white;font-size:16px;font-weight:850;cursor:pointer;min-height:98px;transition:.12s transform,.12s filter;overflow:hidden}.drop:active{transform:scale(.97)}.drop span{display:block;font-size:11px;opacity:.75;margin-top:5px;font-weight:700}.drop:before{content:"";position:absolute;inset:-35px auto auto -35px;width:110px;height:110px;border-radius:50%;background:#fff2;filter:blur(16px)}
+.rare{background:linear-gradient(145deg,#77c7ff,#2f78c4)}.big{background:linear-gradient(145deg,#468ed8,#23538f)}.epic{background:linear-gradient(145deg,#a45cff,#5a1fa7)}.legendary{background:linear-gradient(145deg,#ffd76b,#b57a09)}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}.stat{background:#0c0f15;border:1px solid #1f2530;border-radius:13px;padding:10px}.stat b{display:block;font-size:17px}.stat span{display:block;color:var(--muted);font-size:10px;margin-top:2px}.setup{margin-top:12px;padding:12px;border:1px solid #1f2530;background:#0b0e14;border-radius:14px}.setup h3{margin:0 0 6px;font-size:14px}.setup p{margin:0 0 10px;font-size:11px;line-height:1.5;color:var(--muted)}.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.setup label{font-size:10px;color:var(--muted)}.setup input{display:block;width:100%;margin-top:4px;background:#090c11;border:1px solid #252c38;color:#e8edf5;border-radius:10px;padding:10px}.setup-actions{display:flex;gap:8px;margin-top:9px}.setup-actions button{border:1px solid #293142;background:#171c26;color:#e7ecf5;border-radius:10px;padding:9px 11px;font-weight:800;cursor:pointer}.primary{background:#eef2ff!important;color:#11131a!important}.statusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border:1px solid #222833;background:#0c0f15;border-radius:13px;font-size:12px}.status{display:flex;align-items:center;gap:7px}.dot{width:8px;height:8px;border-radius:50%;background:#737b88}.dot.ok{background:#49d17d;box-shadow:0 0 12px #49d17d88}.dot.err{background:#ff6767}.history{margin-top:16px;overflow:hidden}.history-head{padding:15px 16px;border-bottom:1px solid #222833;display:flex;justify-content:space-between;align-items:center}.history-head h2{font-size:16px;margin:0}.history-head span{font-size:12px;color:var(--muted)}.list{padding:8px;max-height:62vh;overflow:auto}.row{display:grid;grid-template-columns:54px 1fr auto auto;gap:11px;align-items:center;padding:10px;border-radius:14px}.row:hover{background:#131720}.num{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#171b23;color:#aeb6c5;font-weight:800}.pill{justify-self:start;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:850}.time{color:#747e8e;font-size:11px}.rare-pill{background:#1b416d;color:#8ec4ff}.big-pill{background:#3a2a72;color:#bea9ff}.epic-pill{background:#642061;color:#ff9eff}.leg-pill{background:#624311;color:#ffd46d}.empty{padding:36px 20px;text-align:center;color:#758092}.empty b{display:block;color:#cfd5df;margin-bottom:6px}.copybox{margin-top:12px}.copybox textarea{width:100%;min-height:120px;resize:vertical;background:#090c11;border:1px solid #252c38;color:#e8edf5;border-radius:10px;padding:10px;font:600 13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}.copybox-actions{text-align:right;margin-top:8px}.copybox-actions button{border:1px solid #293142;background:#171c26;color:#e7ecf5;border-radius:10px;padding:8px 11px;font-weight:800}.footer{color:#6e7787;font-size:11px;text-align:center;margin-top:12px}.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#eaf0ff;color:#10131a;padding:10px 14px;border-radius:999px;font-weight:750;font-size:12px;transition:.2s}.toast.show{transform:translate(-50%,0);opacity:1}
+@media(max-width:640px){.app{padding-top:10px}.buttons{grid-template-columns:repeat(2,1fr)}.drop{min-height:88px}.stats{grid-template-columns:repeat(3,1fr)}.setup-grid{grid-template-columns:1fr}.stats .stat:nth-child(5){grid-column:2}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="brand"><div class="logo"></div><div><h1>DROP TRACKER</h1><p>PC + iPhone ortak drop geçmişi</p></div></div>
+  <div class="top-actions"><button class="smallbtn" id="copyBtn">⧉ Kopyala</button><button class="smallbtn" id="switchBtn">⇄ Tracker Değiştir</button><button class="smallbtn" id="undoBtn">↶ Geri Al</button><button class="smallbtn" id="clearBtn">Temizle</button></div>
+</header>
+<section class="hero">
+  <div class="buttons">
+    <button class="drop rare" data-type="Rare">RARE<span>Drop ekle</span></button>
+    <button class="drop big" data-type="Big Rare">BIG RARE<span>Drop ekle</span></button>
+    <button class="drop epic" data-type="Epic">EPIC<span>Drop ekle</span></button>
+    <button class="drop legendary" data-type="Legendary">LEGENDARY<span>Drop ekle</span></button>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="statusbar"><div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Bağlanıyor…</span></div><button class="smallbtn" id="settingsBtn">Ayarlar</button></div>
+  <div class="setup" id="setupPanel" hidden>
+    <h3>Online bağlantı</h3><p>Aynı Tracker Kodu'nu PC ve iPhone'da kullanırsan aynı listeyi görürsün. Project URL ve Publishable key bu siteye gömülüdür.</p>
+    <div class="setup-grid"><label>Project URL<input id="urlInput" readonly></label><label>Tracker Kodu<input id="codeInput" placeholder="ör. BENIM-DROPLARIM"></label></div>
+    <div class="setup-actions"><button class="primary" id="connectBtn">Bağlan / Yenile</button><button id="localBtn">Yerel Moda Geç</button></div>
+  </div>
+  <div class="copybox" id="copyBox" hidden><textarea id="copyText" readonly></textarea><div class="copybox-actions"><button id="copyTextBtn">Metni Kopyala</button></div></div>
+</section>
+<section class="history"><div class="history-head"><h2>Drop Geçmişi</h2><span id="totalText">0 kayıt</span></div><div class="list" id="list"><div class="empty"><b>Henüz drop yok</b>Yukarıdaki kutulardan birine bas.</div></div></section>
+<div class="footer">Online modda aynı Tracker Kodu ile tüm cihazlar ortak listeyi kullanır.</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const SUPABASE_URL='https://spjvkyuhedanncbmnxjk.supabase.co';
+const SUPABASE_KEY='sb_publishable_Mx-IQ42AxRLbHcmv6FgwMQ_-ZaOqhm5';
+const STORAGE_KEY='drop-tracker-online-v2';
+const CODE_KEY='drop-tracker-code-v1';
+let client=null, trackerCode='', online=false, drops=[];
+const colors={Rare:'rare-pill','Big Rare':'big-pill',Epic:'epic-pill',Legendary:'leg-pill'};
+const $=id=>document.getElementById(id);
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove('show'),1300)}
+function setStatus(t,s=''){$('statusText').textContent=t;$('statusDot').className='dot '+s}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function saveLocal(){localStorage.setItem(STORAGE_KEY,JSON.stringify(drops))}
+function render(){
+ const counts={Rare:0,'Big Rare':0,Epic:0,Legendary:0}; drops.forEach(x=>counts[x.type]++);
+ $('stats').innerHTML=[['TOPLAM',drops.length],['RARE',counts.Rare],['BIG RARE',counts['Big Rare']],['EPIC',counts.Epic],['LEGENDARY',counts.Legendary]].map(x=>`<div class="stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+ $('totalText').textContent=`${drops.length} kayıt`;
+ if(!drops.length){$('list').innerHTML='<div class="empty"><b>Henüz drop yok</b>Yukarıdaki kutulardan birine bas.</div>';return}
+ $('list').innerHTML=drops.map((d,i)=>`<div class="row"><div class="num">${i+1}</div><div class="pill ${colors[d.type]}">${escapeHtml(d.type.toUpperCase())}</div><div class="time">${new Intl.DateTimeFormat('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(d.at))}</div></div>`).join('');
+}
+function plainList(){return drops.map(x=>x.type.toUpperCase()).join('\n')}
+async function copyList(){if(!drops.length){toast('Kopyalanacak kayıt yok');return} const text=plainList(); try{await navigator.clipboard.writeText(text)}catch(e){$('copyText').value=text;$('copyText').focus();$('copyText').select();document.execCommand('copy')} $('copyBox').hidden=false;$('copyText').value=text;toast('Liste kopyalandı')}
+async function pull(){if(!client||!trackerCode)return;const {data,error}=await client.from('drops').select('id,type,created_at').eq('tracker_code',trackerCode).order('created_at',{ascending:true});if(error)throw error;drops=(data||[]).map(r=>({id:r.id,type:r.type,at:r.created_at}));saveLocal();render()}
+async function connect(){
+ const code=$('codeInput').value.trim(); if(code.length<2){toast('Önce Tracker Kodu yaz');return}
+ trackerCode=code; localStorage.setItem(CODE_KEY,trackerCode); client=supabase.createClient(SUPABASE_URL,SUPABASE_KEY); setStatus('Bağlanıyor…');
+ try{const {error}=await client.from('drops').select('id').eq('tracker_code',trackerCode).limit(1);if(error)throw error;online=true;await pull();$('setupPanel').hidden=true;setStatus('Online • '+trackerCode,'ok');toast('Online bağlandı');}
+ catch(e){online=false;setStatus('Bağlantı hatası','err');console.error(e);toast('Supabase bağlantı hatası')}
+}
+async function addDrop(type){
+ if(!online){drops.push({id:crypto.randomUUID(),type,at:new Date().toISOString()});saveLocal();render();toast(type+' eklendi');return}
+ const {data,error}=await client.from('drops').insert({tracker_code:trackerCode,type,created_at:new Date().toISOString()}).select('id,type,created_at').single();
+ if(error){console.error(error);toast('Sunucuya kaydedilemedi');return} drops.push({id:data.id,type:data.type,at:data.created_at});saveLocal();render();toast(type+' eklendi');
+}
+async function undo(){
+ if(!drops.length){toast('Geri alınacak kayıt yok');return} const x=drops[drops.length-1];
+ if(online){const {error}=await client.from('drops').delete().eq('id',x.id).eq('tracker_code',trackerCode);if(error){console.error(error);toast('Sunucudan silinemedi');return}}
+ drops.pop();saveLocal();render();toast(x.type+' geri alındı');
+}
+async function clearAll(){
+ if(!drops.length){toast('Liste zaten boş');return} if(!confirm('Tüm drop geçmişi silinsin mi?'))return;
+ if(online){const {error}=await client.from('drops').delete().eq('tracker_code',trackerCode);if(error){console.error(error);toast('Sunucudan temizlenemedi');return}}
+ drops=[];saveLocal();render();toast('Geçmiş temizlendi');
+}
+function localMode(){online=false;client=null;setStatus('Yerel mod');try{drops=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){drops=[]}render();toast('Yerel moda geçildi')}
+$('urlInput').value=SUPABASE_URL;
+$('codeInput').value=localStorage.getItem(CODE_KEY)||'';
+try{drops=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(!Array.isArray(drops))drops=[]}catch(e){drops=[]}
+
+</script>
+</body>
+</html>
