@@ -91,6 +91,53 @@ $('urlInput').value=SUPABASE_URL;
 $('codeInput').value=localStorage.getItem(CODE_KEY)||'';
 try{drops=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(!Array.isArray(drops))drops=[]}catch(e){drops=[]}
 
+// Buton bağlantıları
+document.querySelectorAll('.drop[data-type]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(!trackerCode){
+      $('setupPanel').hidden=false;
+      $('codeInput').focus();
+      toast('Önce Tracker Kodu gir');
+      return;
+    }
+    addDrop(btn.dataset.type);
+  });
+});
+$('copyBtn').addEventListener('click',copyList);
+$('copyTextBtn').addEventListener('click',async()=>{
+  const text=$('copyText').value;
+  if(!text)return;
+  try{await navigator.clipboard.writeText(text);toast('Metin kopyalandı')}catch(e){$('copyText').focus();$('copyText').select();document.execCommand('copy');toast('Metin kopyalandı')}
+});
+$('switchBtn').addEventListener('click',()=>{
+  $('setupPanel').hidden=false;
+  $('codeInput').value='';
+  $('codeInput').focus();
+  toast('Yeni Tracker Kodu gir');
+});
+$('undoBtn').addEventListener('click',undo);
+$('clearBtn').addEventListener('click',clearAll);
+$('settingsBtn').addEventListener('click',()=>{$('setupPanel').hidden=!$('setupPanel').hidden});
+$('connectBtn').addEventListener('click',connect);
+$('localBtn').addEventListener('click',localMode);
+$('codeInput').addEventListener('keydown',e=>{if(e.key==='Enter')connect()});
+
+// Kaydedilmiş Tracker Kodu varsa otomatik bağlan
+const savedCode=localStorage.getItem(CODE_KEY);
+if(savedCode){
+  trackerCode=savedCode;
+  $('codeInput').value=savedCode;
+  connect();
+}else{
+  setStatus('Tracker Kodu bekleniyor');
+  render();
+}
+
+// PWA service worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
 </script>
 </body>
 </html>
