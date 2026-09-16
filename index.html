@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0d12" />
+<link rel="manifest" href="manifest.webmanifest" />
+<title>Drop Tracker — Online</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#080a0f;--panel:#11141b;--panel2:#171b24;--text:#f4f7fb;--muted:#9099aa;--line:#262c38;--rare:#5da9ff;--big:#9b7cff;--epic:#e855ff;--leg:#ffc54d;}
+*{box-sizing:border-box} html,body{margin:0;background:radial-gradient(circle at top,#161b25 0,#080a0f 44%,#06070b 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100%}
+body{padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)}
+.app{max-width:900px;margin:0 auto;padding:20px 0 32px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:11px}.logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#fff,#a9b6ff 40%,#7158ff);box-shadow:0 8px 25px #5f55ff33}.brand h1{font-size:20px;margin:0}.brand p{font-size:12px;color:var(--muted);margin:2px 0 0}.top-actions{display:flex;gap:8px}.smallbtn{border:1px solid var(--line);background:#0e1117;color:#dce2ec;border-radius:12px;padding:10px 12px;font-weight:650;cursor:pointer}.smallbtn:hover{background:#171b24}.copybox{margin-top:12px;background:#0b0e14;border:1px solid #1f2530;border-radius:14px;padding:12px}.copybox textarea{width:100%;min-height:100px;resize:vertical;background:#090c11;border:1px solid #252c38;color:#e8edf5;border-radius:10px;padding:10px;font:600 13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}.copybox-actions{display:flex;justify-content:flex-end;margin-top:8px}.copybox button{border:1px solid #293142;background:#171c26;color:#e7ecf5;border-radius:10px;padding:8px 11px;font-weight:750;cursor:pointer}
+.hero{background:linear-gradient(180deg,#141821dd,#0e1117dd);border:1px solid #242a36;border-radius:22px;padding:16px;box-shadow:0 18px 55px #0006;backdrop-filter:blur(12px)}
+.buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.drop{position:relative;border:0;border-radius:17px;padding:19px 10px 16px;color:white;font-size:16px;font-weight:850;letter-spacing:.2px;cursor:pointer;min-height:98px;transition:.12s transform,.12s filter;overflow:hidden}.drop:active{transform:scale(.97)}.drop span{display:block;font-size:11px;opacity:.74;margin-top:5px;font-weight:700}.drop:before{content:"";position:absolute;inset:-35px auto auto -35px;width:110px;height:110px;border-radius:50%;background:#fff2;filter:blur(16px)}
+.rare{background:linear-gradient(145deg,#2b5f9f,#16365f);box-shadow:0 12px 35px #1e6dcc33}.big{background:linear-gradient(145deg,#654bb1,#352467);box-shadow:0 12px 35px #805cff33}.epic{background:linear-gradient(145deg,#b73fbd,#59135e);box-shadow:0 12px 35px #e855ff33}.legendary{background:linear-gradient(145deg,#c58922,#754700);box-shadow:0 12px 35px #ffc54d33}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}.stat{background:#0c0f15;border:1px solid #1f2530;border-radius:13px;padding:10px 11px}.stat b{display:block;font-size:17px}.stat span{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.history{margin-top:16px;background:#0e1117;border:1px solid #222833;border-radius:22px;overflow:hidden}.history-head{padding:15px 16px;border-bottom:1px solid #222833;display:flex;justify-content:space-between;align-items:center}.history-head h2{font-size:16px;margin:0}.history-head span{font-size:12px;color:var(--muted)}.list{padding:8px;max-height:60vh;overflow:auto}.row{display:grid;grid-template-columns:54px 1fr auto;gap:11px;align-items:center;padding:10px;border-radius:14px}.row:hover{background:#131720}.num{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#171b23;color:#aeb6c5;font-weight:800}.pill{justify-self:start;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:850}.time{color:#747e8e;font-size:11px}.rare-pill{background:#1b416d;color:#8ec4ff}.big-pill{background:#3a2a72;color:#bea9ff}.epic-pill{background:#642061;color:#ff9eff}.leg-pill{background:#624311;color:#ffd46d}.empty{padding:36px 20px;text-align:center;color:#758092}.empty b{display:block;color:#cfd5df;margin-bottom:6px}
+.footer{color:#6e7787;font-size:11px;text-align:center;margin-top:12px}.onlinebar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:12px;padding:10px 12px;border:1px solid #222833;background:#0c0f15;border-radius:13px;font-size:12px}.onlinebar .status{display:flex;align-items:center;gap:7px}.dot{width:8px;height:8px;border-radius:50%;background:#737b88}.dot.ok{background:#49d17d;box-shadow:0 0 12px #49d17d88}.dot.err{background:#ff6767}.setup{margin-top:12px;background:#0b0e14;border:1px solid #1f2530;border-radius:14px;padding:12px}.setup h3{font-size:13px;margin:0 0 8px}.setup p{font-size:11px;color:var(--muted);line-height:1.45;margin:0 0 10px}.setup input{width:100%;background:#090c11;border:1px solid #252c38;color:#e8edf5;border-radius:10px;padding:10px;font:600 13px ui-monospace,SFMono-Regular,Menlo,monospace}.setup-actions{display:flex;gap:8px;margin-top:8px}.setup button{border:1px solid #293142;background:#171c26;color:#e7ecf5;border-radius:10px;padding:8px 11px;font-weight:750;cursor:pointer}.onlinehide{display:none}.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#eaf0ff;color:#10131a;padding:10px 14px;border-radius:999px;font-weight:750;font-size:12px;transition:.2s}.toast.show{transform:translate(-50%,0);opacity:1}
+@media(max-width:640px){.app{padding-top:12px}.buttons{grid-template-columns:repeat(2,1fr)}.drop{min-height:88px}.stats{grid-template-columns:repeat(3,1fr)}.stats .stat:nth-child(5){grid-column:2}.top-actions .smallbtn{padding:9px 10px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="logo"></div><div><h1>DROP TRACKER</h1><p>Drop geçmişini hızlıca kaydet</p></div></div>
+    <div class="top-actions"><button class="smallbtn" id="copy">⧉ Kopyala</button><button class="smallbtn" id="undo">↶ Geri Al</button><button class="smallbtn" id="clear">Temizle</button></div>
+  </header>
+
+  <section class="hero">
+    <div class="buttons">
+      <button class="drop rare" data-type="Rare">RARE<span>Drop ekle</span></button>
+      <button class="drop big" data-type="Big Rare">BIG RARE<span>Drop ekle</span></button>
+      <button class="drop epic" data-type="Epic">EPIC<span>Drop ekle</span></button>
+      <button class="drop legendary" data-type="Legendary">LEGENDARY<span>Drop ekle</span></button>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="copybox" id="copybox" hidden><textarea id="copytext" readonly></textarea><div class="copybox-actions"><button id="copyTextBtn">Kopyala</button></div></div>
+  </section>
+
+  <section class="history">
+    <div class="history-head"><h2>Drop Geçmişi</h2><span id="totalText">0 kayıt</span></div>
+    <div class="list" id="list"><div class="empty"><b>Henüz drop yok</b>Yukarıdaki kutulardan birine bas.</div></div>
+  </section>
+  <div class="footer">Yerel modda kayıtlar cihazda; online modda aynı Tracker Kodu ile tüm cihazlarda ortak tutulur.</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const KEY='drop-tracker-v1';
+const CFG='drop-tracker-online-config-v1';
+let drops=[]; let online=false; let client=null; let trackerCode='';
+try{drops=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(drops))drops=[];}catch(e){drops=[]}
+try{const c=JSON.parse(localStorage.getItem(CFG)||'{}'); document.getElementById('supabaseUrl').value=c.url||''; document.getElementById('supabaseKey').value=c.key||''; document.getElementById('trackerCode').value=c.code||'';}catch(e){}
+const colors={Rare:'rare-pill','Big Rare':'big-pill',Epic:'epic-pill',Legendary:'leg-pill'};
+function save(){localStorage.setItem(KEY,JSON.stringify(drops))}
+function time(d){return new Intl.DateTimeFormat('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(d))}
+function setStatus(text,state=''){document.getElementById('statusText').textContent=text;document.getElementById('statusDot').className='dot '+state}
+function render(){
+ const counts={Rare:0,'Big Rare':0,Epic:0,Legendary:0};drops.forEach(x=>counts[x.type]++);
+ document.getElementById('stats').innerHTML=[['TOPLAM',drops.length],['RARE',counts.Rare],['BIG RARE',counts['Big Rare']],['EPIC',counts.Epic],['LEGENDARY',counts.Legendary]].map(x=>`<div class="stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+ document.getElementById('totalText').textContent=`${drops.length} kayıt`;
+ const list=document.getElementById('list'); if(!drops.length){list.innerHTML='<div class="empty"><b>Henüz drop yok</b>Yukarıdaki kutulardan birine bas.</div>';return}
+ list.innerHTML=drops.map((d,i)=>`<div class="row"><div class="num">${i+1}</div><div class="pill ${colors[d.type]}">${d.type.toUpperCase()}</div><div class="time">${time(d.at)}</div></div>`).join('');
+}
+function plainList(){return drops.map(x=>x.type.toUpperCase()).join('\n')}
+function openCopy(){const box=document.getElementById('copybox');box.hidden=false;document.getElementById('copytext').value=plainList();document.getElementById('copytext').focus();document.getElementById('copytext').select()}
+async function doCopy(){if(!drops.length)return toast('Kopyalanacak kayıt yok');const text=plainList();try{await navigator.clipboard.writeText(text)}catch(e){const ta=document.getElementById('copytext');ta.value=text;ta.focus();ta.select();document.execCommand('copy')}toast('Alt alta liste kopyalandı')}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');clearTimeout(window._t);window._t=setTimeout(()=>el.classList.remove('show'),1100)}
+function loadCfg(){try{return JSON.parse(localStorage.getItem(CFG)||'{}')}catch(e){return {}}}
+async function connect(){
+ const url=document.getElementById('supabaseUrl').value.trim().replace(/\/$/,''); const key=document.getElementById('supabaseKey').value.trim(); const code=document.getElementById('trackerCode').value.trim();
+ if(!url||!key||!code)return toast('URL, anon key ve Tracker Kodu gerekli');
+ try{client=supabase.createClient(url,key); trackerCode=code; localStorage.setItem(CFG,JSON.stringify({url,key,code})); setStatus('Bağlanıyor…'); const {error}=await client.from('drops').select('id').eq('tracker_code',trackerCode).limit(1); if(error)throw error; online=true; await pull(); document.getElementById('setupPanel').hidden=true; setStatus('Online senkronizasyon açık','ok'); toast('Online bağlandı')}catch(e){online=false;setStatus('Bağlantı kurulamadı','err');toast('Online bağlantı hatası')}
+}
+async function pull(){ if(!client||!trackerCode)return; const {data,error}=await client.from('drops').select('id,type,created_at').eq('tracker_code',trackerCode).order('created_at',{ascending:true}); if(error)throw error; drops=(data||[]).map(r=>({id:r.id,type:r.type,at:new Date(r.created_at).getTime()})); save(); render() }
+async function pushDrop(type){
+ if(!online||!client){drops.push({id:crypto.randomUUID(),type,at:Date.now()});save();render();toast(type+' eklendi');return}
+ const row={tracker_code:trackerCode,type,created_at:new Date().toISOString()}; const {data,error}=await client.from('drops').insert(row).select('id,type,created_at').single(); if(error){toast('Sunucuya kaydedilemedi');return} drops.push({id:data.id,type:data.type,at:new Date(data.created_at).getTime()});save();render();toast(type+' eklendi')
+}
+async function undo(){
+ if(!drops.length)return toast('Geri alınacak kayıt yok'); const x=drops[drops.length-1];
+ if(online&&client&&x.id){const {error}=await client.from('drops').delete().eq('id',x.id).eq('tracker_code',trackerCode); if(error)return toast('Sunucudan silinemedi')}
+ drops.pop();save();render();toast(x.type+' geri alındı')
+}
+async function clearAll(){
+ if(!drops.length)return; if(!confirm('Tüm drop geçmişi silinsin mi?'))return;
+ if(online&&client){const {error}=await client.from('drops').delete().eq('tracker_code',trackerCode);if(error)return toast('Sunucudan temizlenemedi')}
+ drops=[];save();render();toast('Geçmiş temizlendi')
+}
+document.querySelectorAll('.drop').forEach(btn=>btn.addEventListener('click',()=>pushDrop(btn.dataset.type)));
+document.getElementById('copy').addEventListener('click',()=>{openCopy();doCopy()});
+document.getElementById('copyTextBtn').addEventListener('click',doCopy);
+document.getElementById('undo').addEventListener('click',undo);
+document.getElementById('clear').addEventListener('click',clearAll);
+document.getElementById('setupBtn').addEventListener('click',()=>document.getElementById('setupPanel').hidden=!document.getElementById('setupPanel').hidden);
+document.getElementById('connectBtn').addEventListener('click',connect);
+document.getElementById('disconnectBtn').addEventListener('click',()=>{online=false;client=null;trackerCode='';setStatus('Yerel kayıt modu');toast('Yerel moda geçildi')});
+render();
+const c=loadCfg(); if(c.url&&c.key&&c.code){connect().catch(()=>{})}
+if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
