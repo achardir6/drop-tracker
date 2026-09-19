@@ -21,6 +21,8 @@ if(savedCode){ trackerCode=savedCode; $('codeInput').value=savedCode; connect();
 else { setStatus('Tracker Kodu bekleniyor'); $('setupPanel').hidden=false; }
 render();
 
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js?v=10').catch(console.warn)}
+
 </script>
 <style>
 :root{--bg:#080a0f;--panel:#11141b;--panel2:#171b24;--text:#f4f7fb;--muted:#9099aa;--line:#262c38}
@@ -36,15 +38,15 @@ button,input{font:inherit}.app{max-width:900px;margin:0 auto;padding:18px 0 32px
 .recent-chip{border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;border:1px solid #2a3140}
 .recent-chip.rare-pill{background:#1b416d;color:#8ec4ff}.recent-chip.big-pill{background:#3a2a72;color:#bea9ff}
 .recent-chip.epic-pill{background:#642061;color:#ff9eff}.recent-chip.leg-pill{background:#624311;color:#ffd46d}
-
 .mobile-drops{display:none}
-
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#eaf0ff;color:#10131a;padding:10px 14px;border-radius:999px;font-weight:750;font-size:12px;transition:.2s}.toast.show{transform:translate(-50%,0);opacity:1}
+@media(max-width:640px){.app{padding-top:10px}.buttons{grid-template-columns:repeat(2,1fr)}.drop{min-height:88px}.stats{grid-template-columns:repeat(3,1fr)}.setup-grid{grid-template-columns:1fr}.stats .stat:nth-child(5){grid-column:2}}
+
 @media(max-width:640px){
-.app{padding-top:10px;padding-bottom:105px}.buttons{grid-template-columns:repeat(2,1fr)}.drop{min-height:88px}
-.stats{grid-template-columns:repeat(3,1fr)}.setup-grid{grid-template-columns:1fr}.stats .stat:nth-child(5){grid-column:2}
-.mobile-drops{display:grid;position:fixed;z-index:20;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));grid-template-columns:repeat(4,1fr);gap:6px;padding:7px;background:#0b0e14ee;border:1px solid #29303d;border-radius:17px;backdrop-filter:blur(12px);box-shadow:0 12px 35px #000b}
-.mobile-drops button{border:0;border-radius:11px;padding:13px 4px;color:#fff;font-size:11px;font-weight:900}.mobile-drops .rare{background:#3b8bc8}.mobile-drops .big{background:#285b99}.mobile-drops .epic{background:#6f2ac0}.mobile-drops .legendary{background:#b9800c}
+  .app{padding-bottom:105px}
+  .mobile-drops{display:grid;position:fixed;z-index:20;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));grid-template-columns:repeat(4,1fr);gap:6px;padding:7px;background:#0b0e14ee;border:1px solid #29303d;border-radius:17px;backdrop-filter:blur(12px);box-shadow:0 12px 35px #000b}
+  .mobile-drops button{border:0;border-radius:11px;padding:13px 4px;color:#fff;font-size:11px;font-weight:900}
+  .mobile-drops .rare{background:#3b8bc8}.mobile-drops .big{background:#285b99}.mobile-drops .epic{background:#6f2ac0}.mobile-drops .legendary{background:#b9800c}
 }
 </style>
 </head>
@@ -62,11 +64,10 @@ button,input{font:inherit}.app{max-width:900px;margin:0 auto;padding:18px 0 32px
     <button class="drop legendary" data-type="Legendary">LEGENDARY<span>Drop ekle</span></button>
   </div>
   <div class="stats" id="stats"></div>
-<div class="recent-card" id="recentCard">
+<div class="recent-card">
   <div class="recent-title"><span>⚡ SON 10 DROP</span><span id="recentCount">0</span></div>
   <div class="recent-list" id="recentDrops"></div>
 </div>
-
   <div class="statusbar"><div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Bağlanıyor…</span></div><button class="smallbtn" id="settingsBtn">Ayarlar</button></div>
   <div class="setup" id="setupPanel" hidden>
     <h3>Online bağlantı</h3><p>Aynı Tracker Kodu'nu PC ve iPhone'da kullanırsan aynı listeyi görürsün. Project URL ve Publishable key bu siteye gömülüdür.</p>
@@ -99,21 +100,13 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':
 function saveLocal(){localStorage.setItem(STORAGE_KEY,JSON.stringify(drops))}
 function render(){
  const counts={Rare:0,'Big Rare':0,Epic:0,Legendary:0}; drops.forEach(x=>counts[x.type]++);
- $('stats').innerHTML=[['TOPLAM',drops.length],['RARE',counts.Rare],['BIG RARE',counts['Big Rare']],['EPIC',counts.Epic],['LEGENDARY',counts.Legendary]].map(x=>`<div class="stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
-const maxType=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]||['—',0];
-let bestStreak=0,currentStreak=0,lastType=null;
-for(const d of drops){if(d.type===lastType) currentStreak++; else {currentStreak=1;lastType=d.type} if(currentStreak>bestStreak) bestStreak=currentStreak}
-const lastLeg=[...drops].reverse().find(x=>x.type==='Legendary');
-$('records').innerHTML=[
-  `<div class="record"><b>${maxType[1]}</b><span>En çok: ${maxType[0]}</span></div>`,
-  `<div class="record"><b>${bestStreak}</b><span>En uzun seri</span></div>`,
-  `<div class="record"><b>${lastLeg?new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit'}).format(new Date(lastLeg.at)):'—'}</b><span>Son Legendary</span></div>`
-].join('');
- document.querySelectorAll('.drop').forEach(b=>b.classList.toggle('selected', !!drops.length && b.dataset.type===drops[drops.length-1].type));
+ $('stats').innerHTML=[['TOPLAM',drops.length],['RARE',counts.Rare],['BIG RARE',counts['Big Rare']],['EPIC',counts.Epic],['LEGENDARY',counts.Legendary]].map(x=>`<div class="stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join(''); document.querySelectorAll('.drop').forEach(b=>b.classList.toggle('selected', !!drops.length && b.dataset.type===drops[drops.length-1].type));
  $('totalText').textContent=`${drops.length} kayıt`;
-  const recent=drops.slice(-10).reverse();
+const recent=drops.slice(-10).reverse();
 $('recentCount').textContent=recent.length;
-$('recentDrops').innerHTML=recent.length?recent.map((d,i)=>`<span class="recent-chip ${colors[d.type]}">${drops.length-i}. ${escapeHtml(d.type.toUpperCase())}</span>`).join(''):'<span style="color:#758092;font-size:11px">Henüz drop yok</span>';
+$('recentDrops').innerHTML=recent.length
+  ? recent.map((d,i)=>`<span class="recent-chip ${colors[d.type]}">${drops.length-i}. ${escapeHtml(d.type.toUpperCase())}</span>`).join('')
+  : '<span style="color:#758092;font-size:11px">Henüz drop yok</span>';
 
  if(!drops.length){$('list').innerHTML='<div class="empty"><b>Henüz drop yok</b>Yukarıdaki kutulardan birine bas.</div>';return}
  $('list').innerHTML=drops.map((d,i)=>`<div class="row"><div class="num">${i+1}</div><div class="pill ${colors[d.type]}">${escapeHtml(d.type.toUpperCase())}</div><div class="time">${new Intl.DateTimeFormat('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(d.at))}<span class="date">${new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(d.at))}</span></div></div>`).join('');
@@ -122,10 +115,30 @@ function plainList(){return drops.map(x=>x.type.toUpperCase()).join('\n')}
 async function copyList(){if(!drops.length){toast('Kopyalanacak kayıt yok');return} const text=plainList(); try{await navigator.clipboard.writeText(text)}catch(e){$('copyText').value=text;$('copyText').focus();$('copyText').select();document.execCommand('copy')} $('copyBox').hidden=false;$('copyText').value=text;toast('Liste kopyalandı')}
 async function pull(){if(!client||!trackerCode)return;const {data,error}=await client.from('drops').select('id,type,created_at').eq('tracker_code',trackerCode).order('created_at',{ascending:true});if(error)throw error;drops=(data||[]).map(r=>({id:r.id,type:r.type,at:r.created_at}));saveLocal();render()}
 async function connect(){
- const code=$('codeInput').value.trim(); if(code.length<2){toast('Önce Tracker Kodu yaz');return}
- trackerCode=code; localStorage.setItem(CODE_KEY,trackerCode); client=supabase.createClient(SUPABASE_URL,SUPABASE_KEY); setStatus('Bağlanıyor…');
- try{const {error}=await client.from('drops').select('id').eq('tracker_code',trackerCode).limit(1);if(error)throw error;online=true;await pull();$('setupPanel').hidden=true;setStatus('Online • '+trackerCode,'ok');toast('Online bağlandı');}
- catch(e){online=false;setStatus('Bağlantı hatası','err');console.error(e);toast('Supabase bağlantı hatası')}
+ const code=$('codeInput').value.trim();
+ if(code.length<2){toast('Önce Tracker Kodu yaz');return}
+ trackerCode=code;
+ localStorage.setItem(CODE_KEY,trackerCode);
+ setStatus('Bağlanıyor…');
+ try{
+   if(!window.supabase || typeof window.supabase.createClient!=='function'){
+     throw new Error('Supabase kütüphanesi yüklenemedi');
+   }
+   client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+   const {error}=await client.from('drops').select('id').eq('tracker_code',trackerCode).limit(1);
+   if(error) throw error;
+   online=true;
+   await pull();
+   $('setupPanel').hidden=true;
+   setStatus('Online • '+trackerCode,'ok');
+   toast('Online bağlandı');
+ }catch(e){
+   online=false;
+   setStatus('Bağlantı hatası','err');
+   console.error('Supabase:',e);
+   const msg=e?.message || e?.details || 'Bilinmeyen hata';
+   toast(msg.length>45?msg.slice(0,45)+'…':msg);
+ }
 }
 async function addDrop(type){
  if(!online){drops.push({id:crypto.randomUUID(),type,at:new Date().toISOString()});saveLocal();render();toast(type+' eklendi');return}
@@ -161,6 +174,8 @@ const savedCode=localStorage.getItem(CODE_KEY)||'';
 if(savedCode){ trackerCode=savedCode; $('codeInput').value=savedCode; connect(); }
 else { setStatus('Tracker Kodu bekleniyor'); $('setupPanel').hidden=false; }
 render();
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js?v=10').catch(console.warn)}
 
 </script>
 </body>
