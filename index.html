@@ -6,14 +6,29 @@
 <meta name="theme-color" content="#080a0f">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Drop Tracker</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+document.querySelectorAll('.drop').forEach(b=>b.addEventListener('click',()=>addDrop(b.dataset.type)));
+$('copyBtn').addEventListener('click',copyList);
+$('copyTextBtn').addEventListener('click',copyList);
+$('undoBtn').addEventListener('click',undo);
+$('clearBtn').addEventListener('click',clearAll);
+$('settingsBtn').addEventListener('click',()=>{$('setupPanel').hidden=!$('setupPanel').hidden});
+$('switchBtn').addEventListener('click',()=>{$('setupPanel').hidden=false;$('codeInput').focus()});
+$('connectBtn').addEventListener('click',connect);
+$('localBtn').addEventListener('click',localMode);
+const savedCode=localStorage.getItem(CODE_KEY)||'';
+if(savedCode){ trackerCode=savedCode; $('codeInput').value=savedCode; connect(); }
+else { setStatus('Tracker Kodu bekleniyor'); $('setupPanel').hidden=false; }
+render();
+
+</script>
 <style>
 :root{--bg:#080a0f;--panel:#11141b;--panel2:#171b24;--text:#f4f7fb;--muted:#9099aa;--line:#262c38}
 *{box-sizing:border-box}html,body{margin:0;background:radial-gradient(circle at top,#161b25 0,#080a0f 44%,#06070b 100%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100%}
 body{padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)}
-button,input{font:inherit}.app{max-width:900px;margin:0 auto;padding:18px 0 32px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.brand{display:flex;align-items:center;gap:11px}.logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#fff,#a9b6ff 40%,#7158ff);box-shadow:0 8px 25px #5f55ff33}.brand h1{font-size:20px;margin:0}.brand p{font-size:12px;color:var(--muted);margin:2px 0 0}.top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.smallbtn{border:1px solid var(--line);background:#0e1117;color:#dce2ec;border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}.hero,.history{background:linear-gradient(180deg,#141821dd,#0e1117dd);border:1px solid #242a36;border-radius:22px;box-shadow:0 18px 55px #0006}.hero{padding:16px}.buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.drop{position:relative;border:0;border-radius:17px;padding:19px 10px 16px;color:white;font-size:16px;font-weight:850;cursor:pointer;min-height:98px;transition:.12s transform,.12s filter;overflow:hidden}.drop:active{transform:scale(.97)}.drop span{display:block;font-size:11px;opacity:.75;margin-top:5px;font-weight:700}.drop:before{content:"";position:absolute;inset:-35px auto auto -35px;width:110px;height:110px;border-radius:50%;background:#fff2;filter:blur(16px)}
+button,input{font:inherit}.app{max-width:900px;margin:0 auto;padding:18px 0 32px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.brand{display:flex;align-items:center;gap:11px}.logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#fff,#a9b6ff 40%,#7158ff);box-shadow:0 8px 25px #5f55ff33}.brand h1{font-size:20px;margin:0}.brand p{font-size:12px;color:var(--muted);margin:2px 0 0}.top-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.smallbtn{border:1px solid var(--line);background:#0e1117;color:#dce2ec;border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}.hero,.history{background:linear-gradient(180deg,#141821dd,#0e1117dd);border:1px solid #242a36;border-radius:22px;box-shadow:0 18px 55px #0006}.hero{padding:16px}.buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.drop{position:relative;border:0;border-radius:17px;padding:19px 10px 16px;color:white;font-size:16px;font-weight:850;cursor:pointer;min-height:98px;transition:.12s transform,.12s filter;overflow:hidden}.drop:active{transform:scale(.97)}.drop.selected{outline:4px solid #fff;box-shadow:0 0 0 4px #ffffff33,0 0 28px #fff5}.drop.selected:after{content:'✓ SON BASILAN';position:absolute;right:9px;top:9px;background:#ffffffdd;color:#111;border-radius:999px;padding:4px 7px;font-size:9px;font-weight:900}.drop span{display:block;font-size:11px;opacity:.75;margin-top:5px;font-weight:700}.drop:before{content:"";position:absolute;inset:-35px auto auto -35px;width:110px;height:110px;border-radius:50%;background:#fff2;filter:blur(16px)}
 .rare{background:linear-gradient(145deg,#77c7ff,#2f78c4)}.big{background:linear-gradient(145deg,#468ed8,#23538f)}.epic{background:linear-gradient(145deg,#a45cff,#5a1fa7)}.legendary{background:linear-gradient(145deg,#ffd76b,#b57a09)}
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}.stat{background:#0c0f15;border:1px solid #1f2530;border-radius:13px;padding:10px}.stat b{display:block;font-size:17px}.stat span{display:block;color:var(--muted);font-size:10px;margin-top:2px}.setup{margin-top:12px;padding:12px;border:1px solid #1f2530;background:#0b0e14;border-radius:14px}.setup h3{margin:0 0 6px;font-size:14px}.setup p{margin:0 0 10px;font-size:11px;line-height:1.5;color:var(--muted)}.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.setup label{font-size:10px;color:var(--muted)}.setup input{display:block;width:100%;margin-top:4px;background:#090c11;border:1px solid #252c38;color:#e8edf5;border-radius:10px;padding:10px}.setup-actions{display:flex;gap:8px;margin-top:9px}.setup-actions button{border:1px solid #293142;background:#171c26;color:#e7ecf5;border-radius:10px;padding:9px 11px;font-weight:800;cursor:pointer}.primary{background:#eef2ff!important;color:#11131a!important}.statusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border:1px solid #222833;background:#0c0f15;border-radius:13px;font-size:12px}.status{display:flex;align-items:center;gap:7px}.dot{width:8px;height:8px;border-radius:50%;background:#737b88}.dot.ok{background:#49d17d;box-shadow:0 0 12px #49d17d88}.dot.err{background:#ff6767}.history{margin-top:16px;overflow:hidden}.history-head{padding:15px 16px;border-bottom:1px solid #222833;display:flex;justify-content:space-between;align-items:center}.history-head h2{font-size:16px;margin:0}.history-head span{font-size:12px;color:var(--muted)}.list{padding:8px;max-height:62vh;overflow:auto}.row{display:grid;grid-template-columns:54px 1fr auto auto;gap:11px;align-items:center;padding:10px;border-radius:14px}.row:hover{background:#131720}.num{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#171b23;color:#aeb6c5;font-weight:800}.pill{justify-self:start;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:850}.time{color:#747e8e;font-size:11px}.rare-pill{background:#1b416d;color:#8ec4ff}.big-pill{background:#3a2a72;color:#bea9ff}.epic-pill{background:#642061;color:#ff9eff}.leg-pill{background:#624311;color:#ffd46d}.empty{padding:36px 20px;text-align:center;color:#758092}.empty b{display:block;color:#cfd5df;margin-bottom:6px}.copybox{margin-top:12px}.copybox textarea{width:100%;min-height:120px;resize:vertical;background:#090c11;border:1px solid #252c38;color:#e8edf5;border-radius:10px;padding:10px;font:600 13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}.copybox-actions{text-align:right;margin-top:8px}.copybox-actions button{border:1px solid #293142;background:#171c26;color:#e7ecf5;border-radius:10px;padding:8px 11px;font-weight:800}.footer{color:#6e7787;font-size:11px;text-align:center;margin-top:12px}.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#eaf0ff;color:#10131a;padding:10px 14px;border-radius:999px;font-weight:750;font-size:12px;transition:.2s}.toast.show{transform:translate(-50%,0);opacity:1}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}.stat{background:#0c0f15;border:1px solid #1f2530;border-radius:13px;padding:10px}.stat b{display:block;font-size:17px}.stat span{display:block;color:var(--muted);font-size:10px;margin-top:2px}.setup{margin-top:12px;padding:12px;border:1px solid #1f2530;background:#0b0e14;border-radius:14px}.setup h3{margin:0 0 6px;font-size:14px}.setup p{margin:0 0 10px;font-size:11px;line-height:1.5;color:var(--muted)}.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.setup label{font-size:10px;color:var(--muted)}.setup input{display:block;width:100%;margin-top:4px;background:#090c11;border:1px solid #252c38;color:#e8edf5;border-radius:10px;padding:10px}.setup-actions{display:flex;gap:8px;margin-top:9px}.setup-actions button{border:1px solid #293142;background:#171c26;color:#e7ecf5;border-radius:10px;padding:9px 11px;font-weight:800;cursor:pointer}.primary{background:#eef2ff!important;color:#11131a!important}.statusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border:1px solid #222833;background:#0c0f15;border-radius:13px;font-size:12px}.status{display:flex;align-items:center;gap:7px}.dot{width:8px;height:8px;border-radius:50%;background:#737b88}.dot.ok{background:#49d17d;box-shadow:0 0 12px #49d17d88}.dot.err{background:#ff6767}.history{margin-top:16px;overflow:hidden}.history-head{padding:15px 16px;border-bottom:1px solid #222833;display:flex;justify-content:space-between;align-items:center}.history-head h2{font-size:16px;margin:0}.history-head span{font-size:12px;color:var(--muted)}.list{padding:8px;max-height:62vh;overflow:auto}.row{display:grid;grid-template-columns:54px 1fr auto auto;gap:11px;align-items:center;padding:10px;border-radius:14px}.row:hover{background:#131720}.num{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#171b23;color:#aeb6c5;font-weight:800}.pill{justify-self:start;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:850}.time{color:#aab3c2;font-size:11px;text-align:right}.date{display:block;color:#737e90;font-size:10px;margin-top:2px}.rare-pill{background:#1b416d;color:#8ec4ff}.big-pill{background:#3a2a72;color:#bea9ff}.epic-pill{background:#642061;color:#ff9eff}.leg-pill{background:#624311;color:#ffd46d}.empty{padding:36px 20px;text-align:center;color:#758092}.empty b{display:block;color:#cfd5df;margin-bottom:6px}.copybox{margin-top:12px}.copybox textarea{width:100%;min-height:120px;resize:vertical;background:#090c11;border:1px solid #252c38;color:#e8edf5;border-radius:10px;padding:10px;font:600 13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}.copybox-actions{text-align:right;margin-top:8px}.copybox-actions button{border:1px solid #293142;background:#171c26;color:#e7ecf5;border-radius:10px;padding:8px 11px;font-weight:800}.footer{color:#6e7787;font-size:11px;text-align:center;margin-top:12px}.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#eaf0ff;color:#10131a;padding:10px 14px;border-radius:999px;font-weight:750;font-size:12px;transition:.2s}.toast.show{transform:translate(-50%,0);opacity:1}
 @media(max-width:640px){.app{padding-top:10px}.buttons{grid-template-columns:repeat(2,1fr)}.drop{min-height:88px}.stats{grid-template-columns:repeat(3,1fr)}.setup-grid{grid-template-columns:1fr}.stats .stat:nth-child(5){grid-column:2}}
 </style>
 </head>
@@ -57,10 +72,10 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':
 function saveLocal(){localStorage.setItem(STORAGE_KEY,JSON.stringify(drops))}
 function render(){
  const counts={Rare:0,'Big Rare':0,Epic:0,Legendary:0}; drops.forEach(x=>counts[x.type]++);
- $('stats').innerHTML=[['TOPLAM',drops.length],['RARE',counts.Rare],['BIG RARE',counts['Big Rare']],['EPIC',counts.Epic],['LEGENDARY',counts.Legendary]].map(x=>`<div class="stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+ $('stats').innerHTML=[['TOPLAM',drops.length],['RARE',counts.Rare],['BIG RARE',counts['Big Rare']],['EPIC',counts.Epic],['LEGENDARY',counts.Legendary]].map(x=>`<div class="stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join(''); document.querySelectorAll('.drop').forEach(b=>b.classList.toggle('selected', !!drops.length && b.dataset.type===drops[drops.length-1].type));
  $('totalText').textContent=`${drops.length} kayıt`;
  if(!drops.length){$('list').innerHTML='<div class="empty"><b>Henüz drop yok</b>Yukarıdaki kutulardan birine bas.</div>';return}
- $('list').innerHTML=drops.map((d,i)=>`<div class="row"><div class="num">${i+1}</div><div class="pill ${colors[d.type]}">${escapeHtml(d.type.toUpperCase())}</div><div class="time">${new Intl.DateTimeFormat('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(d.at))}</div></div>`).join('');
+ $('list').innerHTML=drops.map((d,i)=>`<div class="row"><div class="num">${i+1}</div><div class="pill ${colors[d.type]}">${escapeHtml(d.type.toUpperCase())}</div><div class="time">${new Intl.DateTimeFormat('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(d.at))}<span class="date">${new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(d.at))}</span></div></div>`).join('');
 }
 function plainList(){return drops.map(x=>x.type.toUpperCase()).join('\n')}
 async function copyList(){if(!drops.length){toast('Kopyalanacak kayıt yok');return} const text=plainList(); try{await navigator.clipboard.writeText(text)}catch(e){$('copyText').value=text;$('copyText').focus();$('copyText').select();document.execCommand('copy')} $('copyBox').hidden=false;$('copyText').value=text;toast('Liste kopyalandı')}
@@ -91,52 +106,20 @@ $('urlInput').value=SUPABASE_URL;
 $('codeInput').value=localStorage.getItem(CODE_KEY)||'';
 try{drops=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(!Array.isArray(drops))drops=[]}catch(e){drops=[]}
 
-// Buton bağlantıları
-document.querySelectorAll('.drop[data-type]').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    if(!trackerCode){
-      $('setupPanel').hidden=false;
-      $('codeInput').focus();
-      toast('Önce Tracker Kodu gir');
-      return;
-    }
-    addDrop(btn.dataset.type);
-  });
-});
+
+document.querySelectorAll('.drop').forEach(b=>b.addEventListener('click',()=>addDrop(b.dataset.type)));
 $('copyBtn').addEventListener('click',copyList);
-$('copyTextBtn').addEventListener('click',async()=>{
-  const text=$('copyText').value;
-  if(!text)return;
-  try{await navigator.clipboard.writeText(text);toast('Metin kopyalandı')}catch(e){$('copyText').focus();$('copyText').select();document.execCommand('copy');toast('Metin kopyalandı')}
-});
-$('switchBtn').addEventListener('click',()=>{
-  $('setupPanel').hidden=false;
-  $('codeInput').value='';
-  $('codeInput').focus();
-  toast('Yeni Tracker Kodu gir');
-});
+$('copyTextBtn').addEventListener('click',copyList);
 $('undoBtn').addEventListener('click',undo);
 $('clearBtn').addEventListener('click',clearAll);
 $('settingsBtn').addEventListener('click',()=>{$('setupPanel').hidden=!$('setupPanel').hidden});
+$('switchBtn').addEventListener('click',()=>{$('setupPanel').hidden=false;$('codeInput').focus()});
 $('connectBtn').addEventListener('click',connect);
 $('localBtn').addEventListener('click',localMode);
-$('codeInput').addEventListener('keydown',e=>{if(e.key==='Enter')connect()});
-
-// Kaydedilmiş Tracker Kodu varsa otomatik bağlan
-const savedCode=localStorage.getItem(CODE_KEY);
-if(savedCode){
-  trackerCode=savedCode;
-  $('codeInput').value=savedCode;
-  connect();
-}else{
-  setStatus('Tracker Kodu bekleniyor');
-  render();
-}
-
-// PWA service worker
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').catch(()=>{});
-}
+const savedCode=localStorage.getItem(CODE_KEY)||'';
+if(savedCode){ trackerCode=savedCode; $('codeInput').value=savedCode; connect(); }
+else { setStatus('Tracker Kodu bekleniyor'); $('setupPanel').hidden=false; }
+render();
 
 </script>
 </body>
